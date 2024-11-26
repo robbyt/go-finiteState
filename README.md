@@ -58,8 +58,8 @@ func main() {
     // Create a new logger
     logger := slog.Default()
 
-    // Create a new FSM
-    machine, err := fsm.New(logger, StateIdle, allowedTransitions)
+    // Create a new FSM, with the initial state and allowed transitions from built-in states
+    machine, err := fsm.New(logger, fsm.StatusNew, fsm.TypicalTransitions)
     if err != nil {
         logger.Error("Failed to create FSM", "error", err)
         return
