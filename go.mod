@@ -1,4 +1,4 @@
-module github.com/robbyt/go-finiteState/fsm
+module github.com/robbyt/go-finiteState
 
 go 1.23.3
 
