@@ -38,7 +38,7 @@ func main() {
 	logger := slog.New(handler).WithGroup("example")
 
 	// Create a new FSM
-	fsm, err := fsm.NewMachine(logger, StatusOnline, allowed)
+	fsm, err := fsm.New(logger, StatusOnline, allowed)
 
 	if err != nil {
 		logger.Error(err.Error())

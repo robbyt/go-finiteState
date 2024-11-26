@@ -12,19 +12,19 @@ func TestFSM(t *testing.T) {
 	t.Parallel()
 
 	t.Run("NewFSM with invalid initial status", func(t *testing.T) {
-		fsm, err := NewMachine(nil, "bla", TypicalTransitions)
+		fsm, err := New(nil, "bla", TypicalTransitions)
 		assert.Nil(t, fsm)
 		require.Error(t, err)
 	})
 
 	t.Run("NewFSM with nil allowedTransitions", func(t *testing.T) {
-		fsm, err := NewMachine(nil, StatusNew, nil)
+		fsm, err := New(nil, StatusNew, nil)
 		assert.Nil(t, fsm)
 		require.Error(t, err)
 	})
 
 	t.Run("GetState and SetState", func(t *testing.T) {
-		fsm, err := NewMachine(nil, StatusNew, TypicalTransitions)
+		fsm, err := New(nil, StatusNew, TypicalTransitions)
 		require.NoError(t, err)
 
 		assert.Equal(t, StatusNew, fsm.GetState())
@@ -65,7 +65,7 @@ func TestFSM(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				fsm, err := NewMachine(nil, tc.initialState, TypicalTransitions)
+				fsm, err := New(nil, tc.initialState, TypicalTransitions)
 				require.NoError(t, err)
 
 				err = fsm.Transition(tc.toState)
@@ -118,7 +118,7 @@ func TestFSM(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				fsm, err := NewMachine(nil, tc.initialState, TypicalTransitions)
+				fsm, err := New(nil, tc.initialState, TypicalTransitions)
 				require.NoError(t, err)
 
 				err = fsm.TransitionIfCurrentState(tc.fromState, tc.toState)
@@ -138,7 +138,7 @@ func TestFSM(t *testing.T) {
 func TestFSM_Transition_DisallowedStateChange(t *testing.T) {
 	t.Parallel()
 
-	fsm, err := NewMachine(nil, StatusNew, TypicalTransitions)
+	fsm, err := New(nil, StatusNew, TypicalTransitions)
 	require.NoError(t, err)
 
 	err = fsm.Transition("InvalidState")
@@ -150,7 +150,7 @@ func TestFSM_Transition_DisallowedStateChange(t *testing.T) {
 func TestFSM_Transition_ModifiedAllowedTransitions(t *testing.T) {
 	t.Parallel()
 
-	fsm, err := NewMachine(nil, StatusNew, TypicalTransitions)
+	fsm, err := New(nil, StatusNew, TypicalTransitions)
 	require.NoError(t, err)
 
 	// Remove all allowed transitions for the current state
@@ -170,7 +170,7 @@ func TestFSM_NoAllowedTransitions(t *testing.T) {
 		StatusNew:   {StatusError},
 		StatusError: {},
 	}
-	fsm, err := NewMachine(nil, StatusNew, smallestTransitions)
+	fsm, err := New(nil, StatusNew, smallestTransitions)
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())

@@ -1,5 +1,7 @@
 # Finite State Machine (FSM) Package for Go
-A flexible and thread-safe finite state machine (FSM) implementation for Go. This package allows you to define custom states and transitions, manage state changes, and subscribe to state updates using channels.
+A flexible and thread-safe finite state machine (FSM) implementation for Go. This library allows
+you to define custom states and transitions, manage state changes, and subscribe to state updates
+using channels.
 
 ## Features
 
@@ -15,9 +17,11 @@ go get github.com/robbyt/go-finiteState
 ```
 
 ## Usage
+A full example is available in [`example/main.go`](example/main.go).
 
 ### Defining States and Transitions
-First, define your custom states and the allowed transitions between them:
+Define your custom states and the allowed transitions between them. There are also some predefined
+states available in [`allowedTransitions.go`](allowedTransitions.go).
 
 ```go
 import (
@@ -32,9 +36,64 @@ const (
 )
 
 // Define allowed transitions
-var allowed = fsm.TransitionsConfig{
-    StatusOnline:   {StatusOffline, StatusUnknown},
-    StatusOffline:  {StatusOnline, StatusUnknown},
-    StatusUnknown:  {},
+var allowedTransitions = fsm.TransitionsConfig{
+    StatusOnline:   string[]{StatusOffline, StatusUnknown},
+    StatusOffline:  string[]{StatusOnline, StatusUnknown},
+    StatusUnknown:  string[]{},
 }
 ```
+
+### Creating a New FSM
+Create a new FSM instance by providing an initial state and the allowed transitions. You can also
+provide a logger using the standard library's log/slog.
+
+
+```go
+import (
+    "github.com/robbyt/go-finiteState/fsm"
+    "log/slog"
+)
+
+func main() {
+    // Create a new logger
+    logger := slog.Default()
+
+    // Create a new FSM
+    machine, err := fsm.New(logger, StateIdle, allowedTransitions)
+    if err != nil {
+        logger.Error("Failed to create FSM", "error", err)
+        return
+    }
+}
+```
+
+### Performing State Transitions
+Transition between states using the Transition method. It ensures that the transition adheres to
+the allowed transitions.
+
+```go
+err = machine.Transition(StateRunning)
+if err != nil {
+    logger.Error("Transition failed", "error", err)
+}
+```
+
+### Subscribing to State Changes
+Subscribe to state changes by obtaining a channel that emits the FSM's state whenever it changes.
+
+```go
+ctx, cancel := context.WithCancel(context.Background())
+defer cancel()
+
+stateChan := machine.GetStateChan(ctx)
+
+go func() {
+    for state := range stateChan {
+        logger.Info("State changed", "state", state)
+    }
+}()
+```
+
+## License
+
+This project is licensed under the Apache License 2.0

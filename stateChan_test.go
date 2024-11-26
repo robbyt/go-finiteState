@@ -29,8 +29,24 @@ import (
 func TestFSM_GetStatusChan(t *testing.T) {
 	t.Parallel()
 
+	t.Run("Nil context", func(t *testing.T) {
+		fsm, err := New(nil, StatusNew, TypicalTransitions)
+		require.NoError(t, err)
+
+		statusChan := fsm.GetStateChan(nil)
+		require.NotNil(t, statusChan)
+
+		select {
+		case status, ok := <-statusChan:
+			assert.Equal(t, StatusNew, status)
+			assert.True(t, ok)
+		case <-time.After(time.Second):
+			t.Fatal("Timed out waiting for channel to close")
+		}
+	})
+
 	t.Run("Initial state is sent immediately", func(t *testing.T) {
-		fsm, err := NewMachine(nil, StatusNew, TypicalTransitions)
+		fsm, err := New(nil, StatusNew, TypicalTransitions)
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -59,7 +75,7 @@ func TestFSM_GetStatusChan(t *testing.T) {
 	})
 
 	t.Run("State changes are emitted", func(t *testing.T) {
-		fsm, err := NewMachine(nil, StatusNew, TypicalTransitions)
+		fsm, err := New(nil, StatusNew, TypicalTransitions)
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -106,7 +122,7 @@ func TestFSM_GetStatusChan(t *testing.T) {
 	})
 
 	t.Run("Multiple subscribers receive updates", func(t *testing.T) {
-		fsm, err := NewMachine(nil, StatusNew, TypicalTransitions)
+		fsm, err := New(nil, StatusNew, TypicalTransitions)
 		require.NoError(t, err)
 
 		ctx1, cancel1 := context.WithCancel(context.Background())
@@ -168,7 +184,7 @@ func TestFSM_GetStatusChan(t *testing.T) {
 }
 
 func TestFSM_SetChanBufferSize(t *testing.T) {
-	fsm, err := NewMachine(nil, StatusNew, TypicalTransitions)
+	fsm, err := New(nil, StatusNew, TypicalTransitions)
 	require.NoError(t, err)
 	require.Equal(t, defaultStateChanBufferSize, fsm.channelBufferSize, "assume the default buffer size is set upon creation")
 

@@ -33,7 +33,7 @@ type Machine struct {
 	Logger             *slog.Logger
 }
 
-// NewMachine initializes a new finite state machine with the specified initial state and
+// New initializes a new finite state machine with the specified initial state and
 // allowed state transitions.
 //
 // Example of allowedTransitions:
@@ -46,7 +46,7 @@ type Machine struct {
 //		StatusError:     {StatusNew, StatusExited},
 //		StatusExited:    {StatusNew},
 //	}
-func NewMachine(logger *slog.Logger, initialState string, allowedTransitions TransitionsConfig) (*Machine, error) {
+func New(logger *slog.Logger, initialState string, allowedTransitions TransitionsConfig) (*Machine, error) {
 	if logger == nil {
 		logger = slog.Default().WithGroup("fsm")
 		logger.Warn("Logger is nil, using the default logger configuration.")
