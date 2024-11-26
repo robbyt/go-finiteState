@@ -88,7 +88,7 @@ func (fsm *Machine) broadcast(newState string) {
 	defer fsm.subscriberMutex.Unlock()
 
 	// Now iterate over the copied slice without holding the lock
-	for ch, _ := range fsm.subscribers {
+	for ch := range fsm.subscribers {
 		select {
 		case ch <- newState:
 			logger.Debug("Broadcasted state to channel", "channel", ch)
