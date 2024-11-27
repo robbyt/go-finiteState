@@ -146,6 +146,14 @@ func (fsm *Machine) Transition(toState string) error {
 	return fsm.transition(toState)
 }
 
+// TransitionBool is similar to Transition, but returns a boolean indicating whether the transition
+// was successful.
+func (fsm *Machine) TransitionBool(toState string) bool {
+	fsm.mutex.Lock()
+	defer fsm.mutex.Unlock()
+	return fsm.transition(toState) == nil
+}
+
 // TransitionIfCurrentState changes the FSM's state to toState only if the current state matches
 // fromState. This returns an error if the current state does not match or if the transition is
 // not allowed.

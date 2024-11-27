@@ -271,3 +271,55 @@ func TestFSM_RaceCondition_Broadcast(t *testing.T) {
 	fsmMachine.Transition(StateA)
 	testState(t, listener, StateA, false)
 }
+
+func TestFSM_TransitionBool(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name           string
+		initialState   string
+		toState        string
+		expectedResult bool
+		expectedState  string
+	}{
+		{
+			name:           "Valid transition from StatusNew to StatusBooting",
+			initialState:   StatusNew,
+			toState:        StatusBooting,
+			expectedResult: true,
+			expectedState:  StatusBooting,
+		},
+		{
+			name:           "Invalid transition from StatusNew to StatusRunning",
+			initialState:   StatusNew,
+			toState:        StatusRunning,
+			expectedResult: false,
+			expectedState:  StatusNew,
+		},
+		{
+			name:           "Valid transition from StatusRunning to StatusReloading",
+			initialState:   StatusRunning,
+			toState:        StatusReloading,
+			expectedResult: true,
+			expectedState:  StatusReloading,
+		},
+		{
+			name:           "Invalid transition from StatusRunning to StatusNew",
+			initialState:   StatusRunning,
+			toState:        StatusNew,
+			expectedResult: false,
+			expectedState:  StatusRunning,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			fsm, err := New(nil, tc.initialState, TypicalTransitions)
+			require.NoError(t, err)
+
+			result := fsm.TransitionBool(tc.toState)
+			assert.Equal(t, tc.expectedResult, result)
+			assert.Equal(t, tc.expectedState, fsm.GetState())
+		})
+	}
+}
