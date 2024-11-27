@@ -46,19 +46,21 @@ func (fsm *Machine) SetChanBufferSize(size int) {
 // The current state is sent immediately upon subscription. If the channel is not being read,
 // state changes will be dropped, and a warning will be logged.
 func (fsm *Machine) GetStateChan(ctx context.Context) <-chan string {
+	logger := fsm.Logger.WithGroup("GetStateChan")
 	if ctx == nil {
-		fsm.Logger.Warn("Context is nil; this will cause a goroutine leak")
+		logger.Warn("Context is nil; this will cause a goroutine leak")
 		ctx = context.Background()
 	}
 
-	// Ensure thread-safe access to channelBufferSize
+	// Read lock to get a copy of the current state and buffer size, for use later
 	fsm.mutex.RLock()
 	bufferSize := fsm.channelBufferSize
+	initialState := fsm.state
 	fsm.mutex.RUnlock()
 
 	// Send the current state immediately
 	ch := make(chan string, bufferSize)
-	ch <- fsm.GetState()
+	ch <- initialState
 
 	// Add the channel to the subscribers list
 	fsm.subscriberMutex.Lock()
@@ -67,10 +69,12 @@ func (fsm *Machine) GetStateChan(ctx context.Context) <-chan string {
 
 	// Start a goroutine to monitor the context
 	go func() {
+		logger.Debug("State listener channel started", "bufferSize", bufferSize, "state", initialState)
 		// Wait for context cancellation
 		<-ctx.Done()
 		// Clean up: remove the subscriber and close the channel
 		fsm.unsubscribe(ch)
+		logger.Debug("State listener channel closed")
 	}()
 
 	return ch
