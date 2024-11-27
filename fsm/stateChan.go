@@ -17,7 +17,7 @@ package fsm
 
 import "context"
 
-// stateChanBufferSize is the
+// defaultStateChanBufferSize is used by New() to set the default buffer size for the channel
 const defaultStateChanBufferSize = 5
 
 // SetChanBufferSize sets the buffer size for the state change channel.
