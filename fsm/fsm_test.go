@@ -2,7 +2,9 @@ package fsm
 
 import (
 	"context"
+	"log/slog"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -193,4 +195,79 @@ func TestFSM_NoAllowedTransitions(t *testing.T) {
 	default:
 		// All good, channel is empty!
 	}
+}
+
+func testState(t *testing.T, listener <-chan string, expectedState string, errorExpected bool) {
+	t.Helper()
+	countdown, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+
+	select {
+	case state := <-listener:
+		assert.Equal(t, expectedState, state)
+	case <-countdown.Done():
+		if errorExpected {
+			t.Logf("Timeout! But that's ok, we expected an error while waiting for %s", expectedState)
+			return
+		}
+
+		t.Errorf("Timeout! No state transition detected while waiting for %s", expectedState)
+	}
+}
+
+func TestFSM_RaceCondition_Broadcast(t *testing.T) {
+	// Define two states for flipping
+	const (
+		StateA = "StateA"
+		StateB = "StateB"
+		StateC = "StateC"
+		StateD = "StateD"
+		StateE = "StateE"
+		StateF = "StateF"
+		StateG = "StateG"
+	)
+
+	// Define transitions that allow flipping between two states
+	transitions := TransitionsConfig{
+		StateA: {StateB},
+		StateB: {StateC},
+		StateC: {StateD},
+		StateD: {StateE},
+		StateE: {StateF},
+		StateF: {StateG},
+		StateG: {StateA},
+	}
+
+	// Create the FSM starting at "StateA"
+	fsmMachine, err := New(slog.Default(), StateA, transitions)
+	require.NoError(t, err)
+
+	// Context to control subscribers
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Create a listener for the FSM state changes
+	listener := fsmMachine.GetStateChan(ctx)
+	fsmMachine.Transition(StateB)
+	fsmMachine.Transition(StateC)
+	fsmMachine.Transition(StateD)
+	fsmMachine.Transition(StateE)
+	fsmMachine.Transition(StateF)
+	fsmMachine.Transition(StateG)
+
+	// the first 5 state changes were received by the listener as soon as it was created.
+	testState(t, listener, StateA, false)
+	testState(t, listener, StateB, false)
+	testState(t, listener, StateC, false)
+	testState(t, listener, StateD, false)
+	testState(t, listener, StateE, false)
+
+	// expect errors from these two, because this listener channel was full from too many calls
+	// to `Transition`, so the state change updates were dropped.
+	testState(t, listener, StateF, true)
+	testState(t, listener, StateG, true)
+
+	// Now that the channel is empty, continue writing and reading
+	fsmMachine.Transition(StateA)
+	testState(t, listener, StateA, false)
 }
