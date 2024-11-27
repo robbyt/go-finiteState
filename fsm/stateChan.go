@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package fsm
 
 import "context"
@@ -85,6 +86,9 @@ func (fsm *Machine) unsubscribe(ch chan string) {
 
 // broadcast sends the new state to all subscriber channels.
 // If a channel is full, the state change is skipped for that channel, and a warning is logged.
+// This, and the other subscriber-related methods, use a standard mutex instead of an RWMutex,
+// because the broadcast sends should always be serial, and never concurrent, otherwise the order
+// of state change notifications could be unpredictable.
 func (fsm *Machine) broadcast(newState string) {
 	logger := fsm.Logger.With("state", newState)
 	fsm.subscriberMutex.Lock()

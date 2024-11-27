@@ -13,6 +13,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+// Package fsm provides a thread-safe finite state machine implementation.
+// It allows defining custom states and transitions, managing state changes,
+// and subscribing to state updates via channels.
+//
+// Example usage:
+//
+//	logger := slog.Default()
+//	machine, err := fsm.New(logger, fsm.StatusNew, fsm.TypicalTransitions)
+//	if err != nil {
+//	    logger.Error("Failed to create FSM", "error", err)
+//	    return
+//	}
+//
+//	err = machine.Transition(fsm.StatusRunning)
+//	if err != nil {
+//	    logger.Error("Transition failed", "error", err)
+//	}
 package fsm
 
 import (
