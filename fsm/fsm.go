@@ -29,7 +29,7 @@ type Machine struct {
 	allowedTransitions transitionConfigWithIndex
 	subscriberMutex    sync.Mutex
 	subscribers        map[chan string]struct{}
-	channelBufferSize  int // ChannelBufferSize for the status channel, must always be at least 1
+	channelBufferSize  int // used when creating the status channel, must be > 0
 	Logger             *slog.Logger
 }
 

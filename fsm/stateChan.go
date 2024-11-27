@@ -17,7 +17,7 @@ package fsm
 
 import "context"
 
-// defaultStateChanBufferSize is used by New() to set the default buffer size for the channel
+// defaultStateChanBufferSize is the default buffer size used for the state change channel.
 const defaultStateChanBufferSize = 5
 
 // SetChanBufferSize sets the buffer size for the state change channel.
@@ -41,9 +41,9 @@ func (fsm *Machine) SetChanBufferSize(size int) {
 	fsm.mutex.Unlock()
 }
 
-// GetStateChan returns a channel that emits the FSM's state whenever it changes. The channel is
-// closed when the provided context is canceled. If the channel is not being read, the status
-// changes will be dropped, and a warning will be logged.
+// GetStateChan returns a channel that emits the FSM's state whenever it changes.
+// The current state is sent immediately upon subscription. If the channel is not being read,
+// state changes will be dropped, and a warning will be logged.
 func (fsm *Machine) GetStateChan(ctx context.Context) <-chan string {
 	if ctx == nil {
 		fsm.Logger.Warn("Context is nil; this will cause a goroutine leak")
@@ -75,6 +75,7 @@ func (fsm *Machine) GetStateChan(ctx context.Context) <-chan string {
 	return ch
 }
 
+// unsubscribe removes a subscriber channel and closes it.
 func (fsm *Machine) unsubscribe(ch chan string) {
 	fsm.subscriberMutex.Lock()
 	defer fsm.subscriberMutex.Unlock()
@@ -82,12 +83,13 @@ func (fsm *Machine) unsubscribe(ch chan string) {
 	close(ch)
 }
 
+// broadcast sends the new state to all subscriber channels.
+// If a channel is full, the state change is skipped for that channel, and a warning is logged.
 func (fsm *Machine) broadcast(newState string) {
 	logger := fsm.Logger.With("state", newState)
 	fsm.subscriberMutex.Lock()
 	defer fsm.subscriberMutex.Unlock()
 
-	// Now iterate over the copied slice without holding the lock
 	for ch := range fsm.subscribers {
 		select {
 		case ch <- newState:
