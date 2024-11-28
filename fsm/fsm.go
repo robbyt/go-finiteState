@@ -36,6 +36,7 @@ package fsm
 import (
 	"fmt"
 	"log/slog"
+	"os"
 	"sync"
 )
 
@@ -48,7 +49,8 @@ type Machine struct {
 	subscriberMutex    sync.Mutex
 	subscribers        map[chan string]struct{}
 	channelBufferSize  int // used when creating the status channel, must be > 0
-	Logger             *slog.Logger
+	logHandler         slog.Handler
+	logger             *slog.Logger
 }
 
 // New initializes a new finite state machine with the specified initial state and
@@ -64,10 +66,11 @@ type Machine struct {
 //		StatusError:     {StatusNew, StatusExited},
 //		StatusExited:    {StatusNew},
 //	}
-func New(logger *slog.Logger, initialState string, allowedTransitions TransitionsConfig) (*Machine, error) {
-	if logger == nil {
-		logger = slog.Default().WithGroup("fsm")
-		logger.Warn("Logger is nil, using the default logger configuration.")
+func New(handler slog.Handler, initialState string, allowedTransitions TransitionsConfig) (*Machine, error) {
+	if handler == nil {
+		defaultHandler := slog.NewTextHandler(os.Stdout, nil)
+		handler = defaultHandler.WithGroup("fsm")
+		slog.New(handler).Warn("Handler is nil, using the default logger configuration.")
 	}
 
 	if allowedTransitions == nil || len(allowedTransitions) == 0 {
@@ -85,7 +88,8 @@ func New(logger *slog.Logger, initialState string, allowedTransitions Transition
 		allowedTransitions: trnsIndex,
 		subscribers:        make(map[chan string]struct{}),
 		channelBufferSize:  defaultStateChanBufferSize,
-		Logger:             logger,
+		logHandler:         handler,
+		logger:             slog.New(handler),
 	}, nil
 }
 
@@ -123,14 +127,12 @@ func (fsm *Machine) transition(toState string) error {
 	currentState := fsm.state
 	allowedTransitions, ok := fsm.allowedTransitions[currentState]
 	if !ok {
-		err := fmt.Errorf("%w: current state is '%s'", ErrInvalidState, currentState)
-		fsm.Logger.Error("Invalid state transition table", "error", err)
-		return err
+		return fmt.Errorf("%w: current state is '%s'", ErrInvalidState, currentState)
 	}
 
 	if _, exists := allowedTransitions[toState]; exists {
 		fsm.setState(toState)
-		fsm.Logger.Debug("Transition successful", "from", currentState, "to", toState)
+		fsm.logger.Debug("Transition successful", "from", currentState, "to", toState)
 		return nil
 	}
 

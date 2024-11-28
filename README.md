@@ -55,16 +55,24 @@ import (
 )
 
 func main() {
-    // Create a new logger
+    // Get the default logger
     logger := slog.Default()
 
     // Create a new FSM, with the initial state and allowed transitions from built-in states
-    machine, err := fsm.New(logger, fsm.StatusNew, fsm.TypicalTransitions)
+    machine, err := fsm.New(logger.Handler(), fsm.StatusNew, fsm.TypicalTransitions)
     if err != nil {
         logger.Error("Failed to create FSM", "error", err)
         return
     }
 }
+```
+
+```go
+    // Alternatively, create a new handler with custom options, and pass that handler variable
+    handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+        Level: slog.LevelDebug,
+    )
+    machine, err := fsm.New(handler, fsm.StatusNew, fsm.TypicalTransitions)
 ```
 
 ### Performing State Transitions

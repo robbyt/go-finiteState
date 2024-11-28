@@ -24,7 +24,7 @@ const defaultStateChanBufferSize = 5
 // SetChanBufferSize sets the buffer size for the state change channel.
 func (fsm *Machine) SetChanBufferSize(size int) {
 	if size < 1 {
-		fsm.Logger.Warn("Invalid channel buffer size; must be at least 1", "size", size)
+		fsm.logger.Warn("Invalid channel buffer size; must be at least 1", "size", size)
 		return
 	}
 
@@ -33,7 +33,7 @@ func (fsm *Machine) SetChanBufferSize(size int) {
 	fsm.mutex.RUnlock()
 
 	if size == currentBuffer {
-		fsm.Logger.Debug("Channel buffer size is already set to the requested size", "size", size)
+		fsm.logger.Debug("Channel buffer size is already set to the requested size", "size", size)
 		return
 	}
 
@@ -46,7 +46,7 @@ func (fsm *Machine) SetChanBufferSize(size int) {
 // The current state is sent immediately upon subscription. If the channel is not being read,
 // state changes will be dropped, and a warning will be logged.
 func (fsm *Machine) GetStateChan(ctx context.Context) <-chan string {
-	logger := fsm.Logger.WithGroup("GetStateChan")
+	logger := fsm.logger.WithGroup("GetStateChan")
 	if ctx == nil {
 		logger.Warn("Context is nil; this will cause a goroutine leak")
 		ctx = context.Background()
@@ -94,16 +94,16 @@ func (fsm *Machine) unsubscribe(ch chan string) {
 // because the broadcast sends should always be serial, and never concurrent, otherwise the order
 // of state change notifications could be unpredictable.
 func (fsm *Machine) broadcast(newState string) {
-	logger := fsm.Logger.With("state", newState)
+	logger := fsm.logger.WithGroup("broadcast").With("state", newState)
 	fsm.subscriberMutex.Lock()
 	defer fsm.subscriberMutex.Unlock()
 
 	for ch := range fsm.subscribers {
 		select {
 		case ch <- newState:
-			logger.Debug("Broadcasted state to channel", "channel", ch)
+			logger.Debug("Sent state to channel")
 		default:
-			logger.Warn("Channel is full; skipping broadcast", "channel", ch)
+			logger.Warn("Channel is full; skipping broadcast")
 		}
 	}
 }

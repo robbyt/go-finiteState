@@ -28,6 +28,7 @@ func main() {
 
 	// Create a new logger that omits the time attribute
 	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.TimeKey {
 				return slog.Attr{} // Omit the time attribute
@@ -38,7 +39,7 @@ func main() {
 	logger := slog.New(handler).WithGroup("example")
 
 	// Create a new FSM
-	fsm, err := fsm.New(logger, StatusOnline, allowed)
+	fsm, err := fsm.New(logger.Handler(), StatusOnline, allowed)
 
 	if err != nil {
 		logger.Error(err.Error())

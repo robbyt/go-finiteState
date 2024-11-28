@@ -2,7 +2,6 @@ package fsm
 
 import (
 	"context"
-	"log/slog"
 	"testing"
 	"time"
 
@@ -239,7 +238,7 @@ func TestFSM_RaceCondition_Broadcast(t *testing.T) {
 	}
 
 	// Create the FSM starting at "StateA"
-	fsmMachine, err := New(slog.Default(), StateA, transitions)
+	fsmMachine, err := New(nil, StateA, transitions)
 	require.NoError(t, err)
 
 	// Context to control subscribers
