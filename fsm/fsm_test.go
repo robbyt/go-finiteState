@@ -248,12 +248,12 @@ func TestFSM_RaceCondition_Broadcast(t *testing.T) {
 
 	// Create a listener for the FSM state changes
 	listener := fsmMachine.GetStateChan(ctx)
-	fsmMachine.Transition(StateB)
-	fsmMachine.Transition(StateC)
-	fsmMachine.Transition(StateD)
-	fsmMachine.Transition(StateE)
-	fsmMachine.Transition(StateF)
-	fsmMachine.Transition(StateG)
+	assert.Nil(t, fsmMachine.Transition(StateB))
+	assert.Nil(t, fsmMachine.Transition(StateC))
+	assert.Nil(t, fsmMachine.Transition(StateD))
+	assert.Nil(t, fsmMachine.Transition(StateE))
+	assert.Nil(t, fsmMachine.Transition(StateF))
+	assert.Nil(t, fsmMachine.Transition(StateG))
 
 	// the first 5 state changes were received by the listener as soon as it was created.
 	testState(t, listener, StateA, false)
